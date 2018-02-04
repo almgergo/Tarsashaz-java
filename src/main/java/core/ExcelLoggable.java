@@ -1,3 +1,5 @@
+package core;
+
 import org.apache.poi.ss.usermodel.Row;
 
 public interface ExcelLoggable {

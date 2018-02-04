@@ -1,3 +1,5 @@
+package core;
+
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -30,28 +32,41 @@ public class Tarsashaz {
 
 	int testId = 9158;
 
-	public static void main(String[] args) throws Exception {
+	public static void calculatePeople(String[] args) {
 		System.out.println("Started...");
 		Tarsashaz th = new Tarsashaz();
 
-		List<Integer> idList = th.readIdList();
+		List<Integer> idList;
+		try {
+			idList = th.readIdList();
 
-		for (Integer id : idList) {
-			Map<Integer, String> responses = getResponses(th, id);
+			for (Integer id : idList) {
+				Map<Integer, String> responses = getResponses(th, id);
 
-			decodeResponses(th, responses);
+				decodeResponses(th, responses);
 
-			Person person = null;
-			for (Entry<Integer, String> response : responses.entrySet()) {
-				person = th.parseResponse(response, person);
+				Person person = null;
+				for (Entry<Integer, String> response : responses.entrySet()) {
+					person = th.parseResponse(response, person);
+				}
+
+				person.processPerson();
+
+				System.out.println(person.getName());
+				// System.in.read();
+
 			}
-
-			person.processPerson();
-
-			System.out.println(person.getName());
-			// System.in.read();
-
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
 		System.out.println("Ended...");
 	}
 
