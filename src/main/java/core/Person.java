@@ -40,12 +40,15 @@ public class Person {
 	private Double paymentTotal;
 	private Double balance;
 
+	private Double remainingPaymentBalance;
+
 	List<Backlog> backlogs = new LinkedList<>();
 	List<Payment> payments = new LinkedList<>();
 
 	public void processPerson() {
 		List<Backlog> unpaidBacklogs = this.backlogs;
-		List<Payment> remainingPayments = this.payments;
+
+		List<Payment> remainingPayments = this.payments.stream().map(p -> p.clone()).collect(Collectors.toList());
 
 		XSSFWorkbook workbook = new XSSFWorkbook();
 
@@ -94,6 +97,8 @@ public class Person {
 		XSSFSheet mainSheet = workbook.createSheet("Összegzés");
 
 		mainRowId = personHeader(mainRowId, mainSheet);
+
+		int paymentMainRowId = mainRowId;
 		logMainSheetHeader(mainSheet.createRow(mainRowId++));
 
 		for (Backlog backlog : unpaidBacklogs) {
@@ -131,11 +136,25 @@ public class Person {
 
 		}
 
+		Payment.logTitle(getOrCreateRow(mainSheet, paymentMainRowId - 1));
+		Payment.sumMainInfoHeader(getOrCreateRow(mainSheet, paymentMainRowId++));
+		for (Payment payment : payments) {
+			payment.sumMainInfo(getOrCreateRow(mainSheet, paymentMainRowId++));
+		}
+
 		mainRowId = logSumData(mainSheet, mainRowId + 2, unpaidReqSum, surchargeSum);
 
 		for (int i = 0; i < 200; i++) {
 			mainSheet.autoSizeColumn(i);
 		}
+	}
+
+	private XSSFRow getOrCreateRow(XSSFSheet mainSheet, int paymentMainRowId) {
+		XSSFRow row = mainSheet.getRow(paymentMainRowId++);
+		if (row == null) {
+			row = mainSheet.createRow(paymentMainRowId);
+		}
+		return row;
 	}
 
 	private int personHeader(int mainRowId, XSSFSheet mainSheet) {
@@ -182,7 +201,16 @@ public class Person {
 		sumCell.setCellValue("Összes tartozás");
 
 		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue(unpaidReqSum + surchargeSum);
+		sumCell.setCellValue(unpaidReqSum + surchargeSum - remainingPaymentBalance);
+		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		row = mainSheet.createRow(mainRowId++);
+		cellNum = 0;
+		sumCell = row.createCell(cellNum++);
+		sumCell.setCellValue("Megmaradt befizetés");
+
+		sumCell = row.createCell(cellNum++);
+		sumCell.setCellValue(remainingPaymentBalance);
 		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
 		cellNum++;
@@ -190,7 +218,7 @@ public class Person {
 		sumCell.setCellValue("Összes tartozás, nyitóegyenleggel");
 
 		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue(unpaidReqSum + surchargeSum + this.startBalance * -1.0);
+		sumCell.setCellValue(unpaidReqSum + surchargeSum + this.startBalance * -1.0 - remainingPaymentBalance);
 		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
 		return mainRowId;
@@ -236,6 +264,14 @@ public class Person {
 				backlog.updateInterest(now);
 			}
 		}
+
+		double paymentBalance = 0.0;
+		for (Payment p : remainingPayments) {
+			paymentBalance += p.getAmount();
+		}
+
+		remainingPaymentBalance = paymentBalance;
+
 	}
 
 	private void createCellStyles(XSSFWorkbook workbook) {
