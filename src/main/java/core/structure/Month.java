@@ -57,6 +57,10 @@ public class Month {
 				monthlyBalance -= backlog.getRequiredPayment();
 			}
 
+			if (backlog.getSurcharge() > 0) {
+				monthlyBalance -= backlog.getSurcharge();
+			}
+
 		}
 
 		for (Payment payment : allPayments) {
