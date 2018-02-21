@@ -5,6 +5,7 @@ import java.util.Date;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 
+import core.structure.Person;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

@@ -11,6 +11,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,13 +25,18 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class Tarsashaz {
-	String request = "http://217.61.6.129/th_js_online/php/AlbetetKozoskoltseg.php?albetet_id=";
-	String YEAR_CONST = "&ev=";
-	String REQ_DAY_OF_MONTH = "10";
-	int FIRST_YEAR = 2017;
+import core.structure.Backlog;
+import core.structure.Month;
+import core.structure.Payment;
+import core.structure.Person;
 
-	int testId = 9158;
+public class Tarsashaz {
+	static String request = "http://217.61.6.129/th_js_online/php/AlbetetKozoskoltseg.php?albetet_id=";
+	static String YEAR_CONST = "&ev=";
+	static String REQ_DAY_OF_MONTH = "10";
+	static int FIRST_YEAR = 2017;
+
+	static int testId = 9158;
 
 	public static void calculatePeople(String[] args) {
 		System.out.println("Started...");
@@ -39,6 +45,10 @@ public class Tarsashaz {
 		List<Integer> idList;
 		try {
 			idList = th.readIdList();
+
+			// TEST
+			// idList = new ArrayList<>();
+			// idList.add(testId);
 
 			for (Integer id : idList) {
 				Map<Integer, String> responses = getResponses(th, id);
@@ -124,6 +134,7 @@ public class Tarsashaz {
 			p.setName(personInfoNodes.item(6).getTextContent());
 			// System.out.println(p.getName());
 			p.setStartBalance(Double.parseDouble(personInfoNodes.item(8).getTextContent().split(" ")[0]));
+			p.setOriginalStartBalance(p.getStartBalance());
 
 			p.setExistingBacklog(Double.parseDouble(doc.getChildNodes().item(0).getChildNodes().item(1).getChildNodes()
 					.item(2).getChildNodes().item(8).getTextContent().split(" ")[0]));
@@ -157,11 +168,17 @@ public class Tarsashaz {
 		c.set(Calendar.MONTH, Integer.parseInt(nodeList.item(5).getTextContent().split("\\.")[1]) - 1);
 		c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(nodeList.item(5).getTextContent().split("\\.")[2]));
 
-		p.getPayments().add(new Payment(c, nodeList.item(6).getTextContent(), nodeList.item(7).getTextContent(),
-				Double.parseDouble(nodeList.item(8).getTextContent().split(" ")[0])));
+		Double paymentAmount = Double.parseDouble(nodeList.item(8).getTextContent().split(" ")[0]);
+
+		Payment payment = new Payment(c, nodeList.item(6).getTextContent(), nodeList.item(7).getTextContent(),
+				paymentAmount, paymentAmount);
+
+		p.getMonths().getLast().getPayments().add(payment);
+		p.getPayments().add(payment);
 
 	}
 
+	@SuppressWarnings("unchecked")
 	private void recordBacklog(Person p, int year, NodeList nodeList) {
 		Calendar c = Calendar.getInstance();
 		nullTime(c);
@@ -169,10 +186,34 @@ public class Tarsashaz {
 		c.set(Calendar.MONTH, Integer.parseInt(nodeList.item(1).getTextContent().split("\\.")[0]) - 1);
 		c.set(Calendar.DAY_OF_MONTH, 10);
 
-		p.getBacklogs()
-				.add(new Backlog(c, Double.parseDouble(nodeList.item(2).getTextContent().split(" ")[0]),
-						Double.parseDouble(nodeList.item(3).getTextContent().split(" ")[0]),
-						Double.parseDouble(nodeList.item(4).getTextContent().split(" ")[0])));
+		Backlog backlog = new Backlog(c, Double.parseDouble(nodeList.item(2).getTextContent().split(" ")[0]),
+				Double.parseDouble(nodeList.item(3).getTextContent().split(" ")[0]),
+				Double.parseDouble(nodeList.item(4).getTextContent().split(" ")[0]));
+
+		newMonth(p, c);
+
+		if (p.getBacklogs().size() == 0 && p.getStartBalance() > 0) {
+			Payment startBalancePayment = new Payment(c, "", "Nyitó egyenleg", p.getStartBalance(),
+					p.getStartBalance());
+			p.getPayments().add(startBalancePayment);
+			p.getMonths().getLast().getPayments().add(startBalancePayment);
+		}
+
+		p.getMonths().getLast().setBacklog(backlog);
+		p.getBacklogs().add(backlog);
+	}
+
+	private void newMonth(Person p, Calendar c) {
+		if (p.getMonths().size() > 0) {
+			p.getMonths().add(Month.builder().date(c).previousMonths((LinkedList<Month>) p.getMonths().clone())
+					// .backlogs((LinkedList<Backlog>)
+					// p.getMonths().getLast().getBacklogs().clone())
+					// .payments((LinkedList<Payment>)
+					// p.getMonths().getLast().getPayments().clone())
+					.build());
+		} else {
+			p.getMonths().add(Month.builder().date(c).previousMonths(new LinkedList<Month>()).build());
+		}
 	}
 
 	private Map<String, String> readDecodeMap() throws FileNotFoundException, IOException {

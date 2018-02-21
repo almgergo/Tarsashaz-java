@@ -1,11 +1,11 @@
 package core;
 
 import java.util.Date;
-import core.ExcelLoggable;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 
+import core.structure.Person;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
