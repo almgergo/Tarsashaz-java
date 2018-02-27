@@ -58,13 +58,11 @@ public class Person {
 			m.logMonth(this, workbook);
 		}
 
-		int rowNum = 0;
-		// System.out.println("Creating excel");
+		int i = 0;
+		for (Month m : months) {
+			m.hideSheet(workbook, i++);
+		}
 
-		// processBacklogs(backlogs, payments);
-		//
-		// logBacklogs(backlogs, workbook);
-		//
 		printWorkbookToFile(workbook);
 	}
 

@@ -160,6 +160,48 @@ public class Month {
 		for (int i = 0; i < 200; i++) {
 			monthlySheet.autoSizeColumn(i);
 		}
+
+		setSheetOrder(workbook, monthlySheet.getSheetName());
+
+	}
+
+	public void setSheetOrder(XSSFWorkbook workbook, String sheetName) {
+		Calendar startOfMonth = getCurrentMonthStart();
+		Calendar endOfMonth = getCurrentMonthEnd();
+
+		if (!this.getDate().before(startOfMonth) && this.getDate().before(endOfMonth)) {
+			workbook.setSheetOrder(sheetName, 0);
+		}
+	}
+
+	public void hideSheet(XSSFWorkbook workbook, int sheetIx) {
+		Calendar startOfMonth = getCurrentMonthStart();
+		Calendar endOfMonth = getCurrentMonthEnd();
+
+		if (this.getDate().before(startOfMonth) || !this.getDate().before(endOfMonth)) {
+			workbook.setSheetHidden(sheetIx, true);
+		}
+	}
+
+	private Calendar getCurrentMonthEnd() {
+		Calendar endOfMonth = Calendar.getInstance();
+		endOfMonth.add(Calendar.MONTH, 1);
+		endOfMonth.set(Calendar.DAY_OF_MONTH, 1);
+		endOfMonth.set(Calendar.HOUR_OF_DAY, 0);
+		endOfMonth.set(Calendar.MINUTE, 0);
+		endOfMonth.set(Calendar.SECOND, 0);
+		endOfMonth.set(Calendar.MILLISECOND, 0);
+		return endOfMonth;
+	}
+
+	private Calendar getCurrentMonthStart() {
+		Calendar startOfMonth = Calendar.getInstance();
+		startOfMonth.set(Calendar.DAY_OF_MONTH, 1);
+		startOfMonth.set(Calendar.HOUR_OF_DAY, 0);
+		startOfMonth.set(Calendar.MINUTE, 0);
+		startOfMonth.set(Calendar.SECOND, 0);
+		startOfMonth.set(Calendar.MILLISECOND, 0);
+		return startOfMonth;
 	}
 
 	private void calculateTotalRequiredAmount(Person person) {
