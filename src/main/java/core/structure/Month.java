@@ -155,6 +155,8 @@ public class Month {
 		}
 		this.logRow(person, monthlySheet.createRow(rowNum++));
 
+		this.logSummary(person, monthlySheet.createRow(rowNum++));
+
 		for (int i = 0; i < 200; i++) {
 			monthlySheet.autoSizeColumn(i);
 		}
@@ -168,7 +170,7 @@ public class Month {
 		totalRequiredAmount += this.backlog.getOriginalRequiredPayment() + this.calculateSumSurcharge();
 
 		if (person.getStartBalance() < 0) {
-			totalRequiredAmount -= person.getStartBalance();
+			totalRequiredAmount -= person.getOriginalStartBalance();
 		}
 	}
 
@@ -193,11 +195,9 @@ public class Month {
 		sumCell = row.createCell(cellNum++);
 		sumCell.setCellValue("Befizetés");
 
-		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue("Összes közös költség + számított kamat");
-
-		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue("Egyenleg");
+		// sumCell = row.createCell(cellNum++);
+		// sumCell.setCellValue("Összes közös költség + számított kamat + nyitó
+		// egyenleg");
 
 		row = sheet.createRow(rowNum++);
 		cellNum = 0;
@@ -220,13 +220,9 @@ public class Month {
 		sumCell.setCellValue(totalPayment);
 		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
-		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue(totalRequiredAmount);
-		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
-
-		sumCell = row.createCell(cellNum++);
-		sumCell.setCellValue(totalPayment - totalRequiredAmount);
-		sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+		// sumCell = row.createCell(cellNum++);
+		// sumCell.setCellValue(totalRequiredAmount);
+		// sumCell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
 		rowNum++;
 		rowNum++;
@@ -249,9 +245,6 @@ public class Month {
 		headerCell.setCellValue("Befizetve");
 
 		headerCell = row.createCell(cellNum++);
-		headerCell.setCellValue("Havi egyenleg");
-
-		headerCell = row.createCell(cellNum++);
 		headerCell.setCellValue("Rendezetlen előirányzat");
 
 		headerCell = row.createCell(cellNum++);
@@ -264,7 +257,13 @@ public class Month {
 		headerCell.setCellValue("91. naptól 60%");
 
 		headerCell = row.createCell(cellNum++);
+		headerCell.setCellValue("Összes kamat");
+
+		headerCell = row.createCell(cellNum++);
 		headerCell.setCellValue("közös költség + számított kamat");
+
+		headerCell = row.createCell(cellNum++);
+		headerCell.setCellValue("Havi egyenleg kamattal");
 
 	}
 
@@ -285,10 +284,6 @@ public class Month {
 		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
 		cell = row.createCell(cellNum++);
-		cell.setCellValue(this.monthlyBalance);
-		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
-
-		cell = row.createCell(cellNum++);
 		cell.setCellValue(this.backlog.getRequiredPayment());
 		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
@@ -298,10 +293,77 @@ public class Month {
 		printSurcharge(cell, 1.4);
 		cell = row.createCell(cellNum++);
 		printSurcharge(cell, 1.6);
+		cell = row.createCell(cellNum++);
+		cell.setCellValue(getAllSurchargeForMonth());
+		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
 
 		cell = row.createCell(cellNum++);
 		cell.setCellValue(this.backlog.getOriginalRequiredPayment() + calculateSumSurcharge());
 		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		cell.setCellValue(this.monthlyBalance);
+		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+	}
+
+	public void logSummary(Person person, Row row) {
+		Cell cell = null;
+		int cellNum = 0;
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(date.getTime());
+		// cell.setCellStyle(Person.DATE_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(this.backlog.getOriginalRequiredPayment());
+		// cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(this.backlog.getPaidAmount());
+		// cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(this.backlog.getRequiredPayment());
+		// cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// printSurcharge(cell, 1.2);
+		cell = row.createCell(cellNum++);
+		// printSurcharge(cell, 1.4);
+		cell = row.createCell(cellNum++);
+		// printSurcharge(cell, 1.6);
+		cell = row.createCell(cellNum++);
+		cell.setCellValue(getAllSurcharge());
+		cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(this.backlog.getOriginalRequiredPayment() +
+		// calculateSumSurcharge());
+		// cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+
+		cell = row.createCell(cellNum++);
+		// cell.setCellValue(this.monthlyBalance);
+		// cell.setCellStyle(Person.CURRENCY_CELL_STYLE);
+	}
+
+	private double getAllSurcharge() {
+		double sumSurcharge = 0;
+		for (Month month : previousMonths) {
+			sumSurcharge += month.getAllSurchargeForMonth();
+		}
+
+		sumSurcharge += this.getAllSurchargeForMonth();
+
+		return sumSurcharge;
+	}
+
+	private double getAllSurchargeForMonth() {
+		double sumSurcharge = 0;
+		for (Entry<Double, Double> surcharge : this.backlog.getSurcharges().entrySet()) {
+			sumSurcharge += surcharge.getValue();
+		}
+
+		return sumSurcharge;
 	}
 
 	private void printSurcharge(Cell cell, double interestRate) {

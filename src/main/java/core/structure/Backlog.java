@@ -19,6 +19,7 @@ import lombok.Data;
 
 @Data
 public class Backlog implements HasDate {
+	private static final Double INTEREST_INCREMENT_AMOUNT = 0.2;
 	private Calendar date;
 	private Double requiredPayment;
 	private Double paidAmount;
@@ -124,31 +125,36 @@ public class Backlog implements HasDate {
 
 	private void setInterest(double rate, int dayDiff) {
 		if (rate > this.interestRate) {
-			double oldSurcharge = this.surcharge;
-			double newSurcharge = Math.round((rate - this.interestRate) * this.requiredPayment);
+			long incrementCount = Math.round((rate - this.interestRate) * 5);
 
-			this.surcharges.put(rate, newSurcharge);
-			this.surcharge += newSurcharge;
+			for (int i = 1; i <= incrementCount; i++) {
+				rate = Math.round((this.interestRate + INTEREST_INCREMENT_AMOUNT) * 10) * 1.0 / 10;
 
-			double oldInterestRate = this.interestRate;
-			double newInterestRate = rate;
+				double oldSurcharge = this.surcharge;
+				double newSurcharge = Math.round((rate - this.interestRate) * this.requiredPayment);
 
-			Calendar c2 = Calendar.getInstance();
-			c2.set(Calendar.YEAR, this.getDate().get(Calendar.YEAR));
-			c2.set(Calendar.MONTH, this.getDate().get(Calendar.MONTH));
-			c2.set(Calendar.DAY_OF_MONTH, this.getDate().get(Calendar.DAY_OF_MONTH));
-			c2.set(Calendar.MINUTE, this.getDate().get(Calendar.MINUTE));
-			c2.set(Calendar.HOUR_OF_DAY, this.getDate().get(Calendar.HOUR_OF_DAY));
-			c2.set(Calendar.SECOND, this.getDate().get(Calendar.SECOND));
-			c2.set(Calendar.MILLISECOND, this.getDate().get(Calendar.MILLISECOND));
+				this.surcharges.put(rate, newSurcharge);
+				this.surcharge += newSurcharge;
 
-			c2.add(Calendar.DAY_OF_YEAR, dayDiff);
+				double oldInterestRate = this.interestRate;
+				double newInterestRate = rate;
 
-			this.loggables.add(new InterestInformation(oldInterestRate, newInterestRate, oldSurcharge, newSurcharge,
-					this.requiredPayment, c2.getTime()));
+				Calendar c2 = Calendar.getInstance();
+				c2.set(Calendar.YEAR, this.getDate().get(Calendar.YEAR));
+				c2.set(Calendar.MONTH, this.getDate().get(Calendar.MONTH));
+				c2.set(Calendar.DAY_OF_MONTH, this.getDate().get(Calendar.DAY_OF_MONTH));
+				c2.set(Calendar.MINUTE, this.getDate().get(Calendar.MINUTE));
+				c2.set(Calendar.HOUR_OF_DAY, this.getDate().get(Calendar.HOUR_OF_DAY));
+				c2.set(Calendar.SECOND, this.getDate().get(Calendar.SECOND));
+				c2.set(Calendar.MILLISECOND, this.getDate().get(Calendar.MILLISECOND));
 
-			this.interestRate = newInterestRate;
+				c2.add(Calendar.DAY_OF_YEAR, dayDiff);
 
+				this.loggables.add(new InterestInformation(oldInterestRate, newInterestRate, oldSurcharge, newSurcharge,
+						this.requiredPayment, c2.getTime()));
+
+				this.interestRate = newInterestRate;
+			}
 		}
 	}
 
