@@ -1,4 +1,6 @@
 /target/
 /eredmenyek/
+*.zip
+*.rar
 *.xlsx
 *.jar
